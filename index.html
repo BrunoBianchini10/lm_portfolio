@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guia de Protocolos e Medicações – Versão para Pacientes</title>
+  <style>
+    :root{
+      --bg:#0b1020;--text:#e8eeff;--muted:#b9c2df;--chip:#1f2a4d;--chip-brd:#2b3a69;--btn:#7aa2ff;--shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
+    .container{max-width:1200px;margin:40px auto;padding:0 20px}
+    h1{margin:0 0 10px}
+    .muted{color:var(--muted);font-size:14px;margin-bottom:16px}
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+    .search{position:relative;flex:1 1 280px}
+    .search input{width:100%;padding:12px 14px;border:none;border-radius:12px;background:#0f1731;color:var(--text);outline:none;box-shadow:inset 0 0 0 1px #233056}
+    .btn{border:none;border-radius:12px;padding:10px 14px;background:var(--btn);color:#071229;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+    .chip{padding:8px 12px;border-radius:999px;background:var(--chip);border:1px solid var(--chip-brd);color:#c7d2fe;cursor:pointer}
+    .chip.active{background:#28355f}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:18px}
+    .card{padding:16px;border-radius:16px;display:flex;flex-direction:column;gap:8px;color:#fff;box-shadow:var(--shadow)}
+    .card h3{margin:0;font-size:18px;display:flex;align-items:center;gap:8px}
+    .pill{font-size:12px;opacity:.85}
+    .sec{margin:0}
+    .sec b{display:inline-block;width:auto}
+    .more{margin-top:8px}
+    details{background:rgba(255,255,255,.03);padding:10px;border-radius:12px}
+    summary{cursor:pointer;user-select:none}
+    .empty{display:none;color:var(--muted);text-align:center;padding:30px}
+
+    /* Cores por categoria (iguais às versões anteriores) */
+    .Recuperacao{background:#2d4f8d}
+    .Figado{background:#3a6b3f}
+    .Hormonal{background:#6b3a5f}
+    .Imunidade{background:#345b7a}
+    .Estetica{background:#7a3a5b}
+    .Vitaminas{background:#5b4c7a}
+    .Metabolismo{background:#7a5a2f}
+    .Musculo{background:#7a2f2f}
+    .Outros{background:#444c5b}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Guia de Protocolos e Medicações</h1>
+    <div class="muted">Versão com linguagem simples para pacientes. Use a busca, escolha categorias e clique em "Mostrar mais" para ver detalhes.</div>
+
+    <div class="toolbar">
+      <div class="search"><input id="q" type="search" placeholder="Buscar por nome, indicação ou categoria…"></div>
+      <button class="btn" id="btnPrint">Imprimir/Salvar PDF</button>
+      <button class="btn" id="btnClear">Limpar filtros</button>
+    </div>
+
+    <div class="chips" id="chips"></div>
+
+    <section class="grid" id="grid" aria-live="polite"></section>
+    <div id="empty" class="empty">Nenhum item encontrado. Ajuste a busca ou os filtros.</div>
+  </div>
+
+  <script>
+    const CATS = {
+      Recuperacao:"💪 Recuperação",
+      Figado:"🌿 Fígado/Detox",
+      Hormonal:"🧠 Hormônios/Neuro",
+      Imunidade:"🛡️ Imunidade/Antiox",
+      Estetica:"✨ Estética",
+      Vitaminas:"💊 Vitaminas/Minerais",
+      Metabolismo:"🔥 Metabolismo/Emagrec.",
+      Musculo:"⚡ Massa/Performance",
+      Outros:"📦 Outros"
+    };
+
+    // Helper para criar objeto de item
+    const I = (nome, cat, oque, serve, quando, atencao) => ({nome, cat, oque, serve, quando, atencao});
+
+    const DATA = [
+      // Recuperação
+      I("Recovery Muscular","Recuperacao","Conjunto de nutrientes para recuperação pós-exercício.","Ajuda a reduzir dores e favorece a reconstrução do músculo.","Após treinos intensos ou retorno de lesões.","Beber água e respeitar descanso melhora o efeito."),
+      I("Recovery Neuronal","Hormonal","Mix para cérebro e nervos.","Ajuda memória, foco e disposição mental.","Cansaço mental, estudos ou trabalho intenso.","Evite à noite se sentir agitação."),
+      I("Recovery Vitaminas Hidrossolúveis","Vitaminas","Vitaminas do complexo B e vitamina C.","Dão energia e ajudam na imunidade.","Carência nutricional, estresse, pós-treino.","Urina pode ficar mais amarela: é normal."),
+      I("Recovery – Oligoelementos/Metais","Vitaminas","Minerais como zinco, selênio, magnésio e cromo.","Ajudam metabolismo, energia e defesa do corpo.","Dieta pobre em minerais ou alto desgaste físico.","Tomar com água e, se possível, junto das refeições."),
+
+      // Fígado/Detox
+      I("Protocolo de Desinflamação/Detox Hepática","Figado","Plano para apoiar o fígado.","Ajuda a reduzir inflamação e remover toxinas.","Após uso de álcool/medicamentos ou exames alterados.","Não substitui ajustes de dieta, sono e hidratação."),
+      I("Protocolo Esteatose Hepática (IM)","Figado","Estratégia para gordura no fígado.","Auxilia no controle de gordura e melhora exames.","Quando há diagnóstico de esteatose (graus I–III).","Precisa de acompanhamento e mudanças no estilo de vida."),
+
+      // Hormônios/Neuro
+      I("Alteração de Libido","Hormonal","Nutrientes e fitos que apoiam hormônios.","Pode melhorar desejo sexual e energia.","Queda de libido por estresse, cansaço ou desbalanço.","Investigar causas hormonais com profissional."),
+      I("Moduladores de Neurotransmissores","Hormonal","Nutrientes que equilibram serotonina, dopamina e GABA.","Podem ajudar humor, ansiedade leve e sono.","Fases de estresse, ansiedade leve, foco reduzido.","Não substitui tratamento médico quando necessário."),
+
+      // Imunidade/Antiox
+      I("Protocolo para Imunidade","Imunidade","Combinação para fortalecer defesas.","Ajuda o corpo a reagir melhor a vírus e bactérias.","Períodos de maior exposição ou mudança de estação.","Sono e alimentação são parte fundamental."),
+      I("Antioxidante / Anti-Inflamatório","Imunidade","Nutrientes que protegem as células.","Ajudam a reduzir inflamação e desgaste do corpo.","Pessoas com dor crônica, estresse ou treinos intensos.","Uso contínuo costuma ter melhor resultado."),
+
+      // Estética
+      I("Envelhecimento Cutâneo e Prevenção da Flacidez","Estetica","Suporte ao colágeno e antioxidantes.","Melhora firmeza e qualidade da pele.","Prevenção do envelhecimento e manutenção da pele.","Hidratação e proteção solar potencializam os efeitos."),
+      I("Protocolo para Unhas e Cabelos (Pill Food)","Estetica","Vitaminas e aminoácidos para fios e unhas.","Ajuda no crescimento e fortalecimento.","Unhas fracas, queda de cabelo leve.","Resultados aparecem em 8–12 semanas."),
+      I("D-Pantenol","Estetica","Pró-vitamina B5.","Hidrata e ajuda na regeneração da pele e cabelos.","Ressecamento, pós-sol, pós-procedimentos.","Pode ser tópico ou via cápsulas, conforme orientação."),
+      I("L-Lisina","Musculo","Aminoácido essencial.","Ajuda a produzir colágeno e pode apoiar a imunidade.","Suporte para pele, cabelos e cicatrização.","Geralmente bem tolerada."),
+
+      // Vitaminas/Minerais
+      I("Vitamina D3 100000UI","Vitaminas","Vitamina do sol.","Ajuda na saúde dos ossos e imunidade.","Quando há deficiência ou necessidade de reforço.","Dose alta: precisa de acompanhamento para evitar excesso."),
+      I("Vitamina D3 600000UI","Vitaminas","Vitamina do sol em dose muito alta.","Reposição rápida em casos selecionados.","Deficiência importante (conforme avaliação).","Uso somente com supervisão médica."),
+      I("Cloreto de Cromo 100mcg","Metabolismo","Mineral que ajuda no uso do açúcar.","Pode reduzir vontade por doces e ajudar a glicemia.","Excesso de apetite por açúcar e síndrome metabólica.","Melhorar alimentação aumenta o benefício."),
+      I("Coenzima Q10 100mg","Vitaminas","Substância que dá energia às células.","Ajuda disposição e saúde do coração.","Cansaço, uso de estatinas, envelhecimento.","Costuma ser bem tolerada."),
+      I("Vitamina E (200 UI)","Vitaminas","Vitamina antioxidante.","Ajuda a proteger células e a pele.","Baixa ingestão na dieta, suporte à pele.","Doses altas não são para todos: seguir orientação."),
+      I("Vitamina B12 2500mcg","Vitaminas","Vitamina do sangue e nervos.","Ajuda energia e memória.","Anemia por falta de B12, vegetarianos/idosos.","Pode precisar de exames para dosagem correta."),
+      I("Vitamina C (5g a 50%)","Imunidade","Vitamina antioxidante.","Ajuda imunidade e formação do colágeno.","Períodos de gripes, cicatrização ou estresse.","Doses altas podem dar desconforto gástrico."),
+      I("Vitamina A (25.000 UI)","Vitaminas","Vitamina importante para visão e pele.","Ajuda pele, mucosas e defesa do corpo.","Deficiência confirmada ou pele muito seca.","Excesso pode ser tóxico: usar com orientação."),
+      I("Ácido Lipóico 600mg","Metabolismo","Antioxidante que também atua no açúcar do sangue.","Ajuda sensibilidade à insulina e nervos periféricos.","Formigamentos, resistência à insulina.","Pode causar leve azia em alguns: usar com alimento."),
+      I("Vitamina B3 (Niacinamida) 30mg","Vitaminas","Vitamina do metabolismo.","Ajuda pele e produção de energia.","Cansaço e suporte à pele.","Niacina em altas doses pode ruborizar; niacinamida não."),
+      I("Complexo B","Vitaminas","Conjunto de vitaminas do B.","Melhora energia, humor e saúde dos nervos.","Estresse, cansaço, dieta limitada.","Urina amarela é esperada."),
+      I("ADEK","Vitaminas","Conjunto de vitaminas A, D, E e K (lipossolúveis).","Facilita absorção conjunta.","Dietas restritas e reposição orientada.","Tomar com refeição contendo gordura leve."),
+      I("Ácido Fólico","Vitaminas","Vitamina do DNA e sangue.","Ajuda na formação do bebê e previne anemia.","Gestantes e mulheres planejando engravidar.","Algumas pessoas se beneficiam do metilfolato."),
+      I("Metilfolato","Vitaminas","Forma ativa do ácido fólico.","Pode ser melhor absorvido em algumas pessoas.","Alternativa quando o ácido fólico não funciona bem.","Usar sob orientação, especialmente em gestantes."),
+      I("PQQ 2,5mg","Vitaminas","Nutriente ligado à energia celular.","Ajuda mitocôndrias, podendo melhorar disposição.","Fadiga persistente.","Pode ser combinado com CoQ10."),
+      I("Cloreto de Magnésio","Vitaminas","Mineral do relaxamento muscular.","Ajuda câimbras, sono e intestino.","Tensão muscular, dor e constipação leve.","Pode soltar o intestino em algumas pessoas."),
+
+      // Metabolismo/Emagrecimento
+      I("Emagrecimento – Dieta Cetogênica (Doces e Ansiedade)","Metabolismo","Estratégia para reduzir carboidratos.","Diminui fome e vontade de doces.","Acompanhamento para perda de peso.","Orientação profissional é essencial."),
+      I("Emagrecimento Acelerador de Metabolismo II","Metabolismo","Combinação para aumentar gasto energético.","Ajuda no controle de peso.","Platô de emagrecimento.","Pode conter cafeína: atenção à sensibilidade."),
+      I("Tri Slim","Metabolismo","Fórmula de apoio ao emagrecimento.","Ajuda controle de apetite e metabolismo.","Fase inicial de ajuste alimentar.","Melhor com atividade física regular."),
+      I("Compulsi Free","Metabolismo","Apoio para controle da compulsão.","Ajuda ansiedade ligada à comida.","Comer por ansiedade ou à noite.","Combinar com técnicas de manejo do estresse."),
+      I("Insulin Suport 5mL","Metabolismo","Nutrientes que melhoram ação da insulina.","Ajudam glicemia e controle de peso.","Resistência insulínica.","Acompanhamento com exames é indicado."),
+      I("Lipo Grape","Estetica","Extratos com ação antioxidante.","Apoiam circulação e retenção de líquidos.","Inchaço e sensação de pernas pesadas.","Beber água e movimentar-se ajudam."),
+      I("Lipedema","Estetica","Apoio a quem tem lipedema.","Ajuda na inflamação e no desconforto.","Quando há diagnóstico de lipedema.","Precisa de plano multiprofissional."),
+
+      // Massa/Performance
+      I("Aumento de Massa Muscular I","Musculo","Suporte anabólico.","Ajuda ganho de massa e recuperação.","Treino de força e hipertrofia.","Alimentação adequada é indispensável."),
+      I("BCAA 4mL","Musculo","Aminoácidos da recuperação.","Ajudam a reduzir fadiga durante e após treino.","Treinos longos ou intensos.","Melhor efeito quando usados com proteína."),
+      I("Booster Energético","Musculo","Fórmula para energia rápida.","Aumenta disposição no dia.","Fases de cansaço físico e mental.","Evitar perto da hora de dormir."),
+
+      // Fármacos específicos
+      I("Noripurum","Vitaminas","Ferro para repor estoques.","Trata anemia por falta de ferro.","Fadiga, queda de cabelo por anemia.","Pode escurecer fezes e dar desconforto gástrico."),
+      I("Semaglutida","Metabolismo","Medicação que ajuda a controlar apetite e glicose.","Auxilia perda de peso e diabetes tipo 2.","Obesidade e/ou DM2 conforme indicação médica.","Uso somente com prescrição e acompanhamento."),
+      I("Tirzepatida","Metabolismo","Medicação que age em hormônios do apetite.","Ajuda muito no peso e glicemia.","DM2 e obesidade, conforme avaliação.","Uso apenas com prescrição e seguimento médico."),
+
+      // Outros
+      I("Imuni Plus","Imunidade","Conjunto para reforço da imunidade.","Ajuda o corpo a se defender melhor.","Antes de épocas de gripes e resfriados.","Sono, água e boa alimentação são essenciais."),
+    ];
+
+    // Monta chips (filtros)
+    const chipsWrap=document.getElementById('chips');
+    Object.entries(CATS).forEach(([k,v])=>{
+      const el=document.createElement('span');
+      el.className='chip'; el.textContent=v; el.dataset.key=k;
+      el.onclick=()=>{el.classList.toggle('active'); render();};
+      chipsWrap.appendChild(el);
+    });
+
+    const q=document.getElementById('q');
+    const grid=document.getElementById('grid');
+    const empty=document.getElementById('empty');
+
+    function card(item){
+      const tag = CATS[item.cat];
+      return `<article class="card ${item.cat}">
+        <h3>${tag} ${item.nome}</h3>
+        <p class="pill"><b>O que é:</b> ${item.oque}</p>
+        <p class="pill"><b>Para que serve:</b> ${item.serve}</p>
+        <details class="more">
+          <summary>Mostrar mais</summary>
+          <p class="sec"><b>Quando usar:</b> ${item.quando}</p>
+          <p class="sec"><b>Atenção:</b> ${item.atencao}</p>
+        </details>
+      </article>`
+    }
+
+    function activeCats(){
+      return [...chipsWrap.querySelectorAll('.chip.active')].map(c=>c.dataset.key);
+    }
+
+    function render(){
+      const text=(q.value||'').toLowerCase().trim();
+      const cats=new Set(activeCats());
+      const filtered = DATA.filter(it=>{
+        const content = `${it.nome} ${it.oque} ${it.serve} ${it.quando} ${it.atencao} ${CATS[it.cat]}`.toLowerCase();
+        const textOk = !text || content.includes(text);
+        const catOk = cats.size===0 || cats.has(it.cat);
+        return textOk && catOk;
+      });
+      grid.innerHTML = filtered.map(card).join('');
+      empty.style.display = filtered.length? 'none':'block';
+    }
+
+    q.addEventListener('input', render);
+    document.getElementById('btnClear').onclick=()=>{
+      q.value=''; chipsWrap.querySelectorAll('.chip.active').forEach(c=>c.classList.remove('active')); render();
+    };
+    document.getElementById('btnPrint').onclick=()=>window.print();
+
+    render();
+  </script>
+</body>
+</html>
